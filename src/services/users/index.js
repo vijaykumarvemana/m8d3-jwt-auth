@@ -1,13 +1,15 @@
 import express from 'express'
 import createHttpError from 'http-errors'
 import UserModel from './schema.js'
-import { basicAuthMiddleware } from '../auth/basic.js'
+
+import { JWTAuthMiddleware } from "../auth/token.js"
+import { JWTAuthentication} from "../auth/jwt.js"
 
 
 
 const userRouter = express.Router()
 
-userRouter.get("/", basicAuthMiddleware, async(req, res , next) => {
+userRouter.get("/", JWTAuthMiddleware, async(req, res , next) => {
     try {
         const users = await UserModel.find()
         res.send(users)
@@ -16,7 +18,7 @@ userRouter.get("/", basicAuthMiddleware, async(req, res , next) => {
     }
 })
 
-userRouter.get("/:userID", basicAuthMiddleware, async(req, res , next) => {
+userRouter.get("/:userID", JWTAuthMiddleware, async(req, res , next) => {
     try {
         const userId = req.params.userID
         const user = await UserModel.findById(userId)
@@ -30,7 +32,7 @@ userRouter.get("/:userID", basicAuthMiddleware, async(req, res , next) => {
     }
 })
 
-userRouter.post("/", basicAuthMiddleware, async(req, res , next) => {
+userRouter.post("/", JWTAuthMiddleware, async(req, res , next) => {
     try {
         const user = new UserModel(req.body)
         const {_id} = await user.save()
@@ -41,7 +43,7 @@ userRouter.post("/", basicAuthMiddleware, async(req, res , next) => {
     }
 })
 
-userRouter.put("/:userID", basicAuthMiddleware, async(req, res , next) => {
+userRouter.put("/:userID", JWTAuthMiddleware, async(req, res , next) => {
     try {
         const userId = req.params.userID
         const modifiedUser = await UserModel.findByIdAndUpdate(userId, req.body, {
@@ -59,7 +61,7 @@ userRouter.put("/:userID", basicAuthMiddleware, async(req, res , next) => {
     }
 })
 
-userRouter.delete("/:userID", basicAuthMiddleware,  async(req, res , next) => {
+userRouter.delete("/:userID", JWTAuthMiddleware,  async(req, res , next) => {
     try {
         const userId = req.params.userID
         const deletedUser = await UserModel.findByIdAndDelete(userId)
@@ -73,5 +75,29 @@ userRouter.delete("/:userID", basicAuthMiddleware,  async(req, res , next) => {
       next(error)  
     }
 })
+
+
+userRouter.post("/login", async (req, res, next) => {
+    try {
+      
+      const { email, password } = req.body
+  
+    
+      const user = await UserModel.checkCredentials(email, password)
+  
+      if (user) {
+      
+        const accessToken = await JWTAuthentication(user)
+  
+        
+        res.send({ accessToken })
+      } else {
+        next(createHttpError(401, "Credentials are not correct!"))
+      }
+    } catch (error) {
+      next(error)
+    }
+  })
+  
 
 export default userRouter

@@ -11,13 +11,13 @@ export const basicAuthMiddleware = async (req, res, next) => {
       const decodedCredentials = atob(req.headers.authorization.split(" ")[1])
       console.log(decodedCredentials)
   
-      const [email, passward] = decodedCredentials.split(":")
+      const [email, password] = decodedCredentials.split(":")
       console.log("EMAIL ", email)
-      console.log("PASSWORD ", passward)
+      console.log("PASSWORD ", password)
   
       
   
-      const user = await UserModel.checkCredentials(email, passward)
+      const user = await UserModel.checkCredentials(email, password)
       if (user) {
        
         req.user = user 
